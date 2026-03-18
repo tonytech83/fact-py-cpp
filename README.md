@@ -12,16 +12,20 @@ big-integer library.
 
 
 ### 1. Install Bazel
-The easiest way is via Bazelisk — a small tool that downloads the correct
-Bazel version automatically.
-bashsudo apt install npm
-sudo npm install -g @bazel/bazelisk
-Check it works:
-bashbazel version
+```sh
+curl -L -o bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+
+sudo chmod +x bazelisk
+
+sudo mv bazelisk /usr/local/bin/bazel
+```
 
 ### 2. Install GMP
 GMP is the GNU Multiple Precision library used by the C++ code.
 bashsudo apt install libgmp-dev
+```sh
+sudo apt install libgmp-dev
+```
 
 ### 3. Run the benchmark
 ```sh
@@ -51,8 +55,7 @@ bazel run //python:benchmark -- --n 500000
 ```
 The larger n is, the bigger the gap — try --n 500000 to really see C++ pull ahead.
 
-> [!tip] Note
-> For small values of `n` (roughly n < 500), Python may appear faster.
+> **Note:** for small values of `n` (roughly n < 500), Python may appear faster.
 > This is not because Python arithmetic is faster — it is because the C++ binary
 > runs as a separate process, and launching that process costs ~20µs regardless
 > of how fast the math is. For large `n` the math dominates and C++ wins clearly.
