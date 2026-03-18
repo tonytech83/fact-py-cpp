@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "benchmark",
+    srcs = ["benchmark.py"],
+    main = "benchmark.py",
+    data = ["//cpp:factorial_bin"],
+    python_version = "PY3",
+)

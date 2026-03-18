@@ -1,0 +1,7 @@
+bazel-bin
+bazel-factorial
+bazel-out
+bazel-testlogs
+MODULE.bazel.lock
+__pycache__
+*.pyc

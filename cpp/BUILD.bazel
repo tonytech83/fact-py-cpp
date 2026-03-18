@@ -1,0 +1,18 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+cc_library(
+    name = "factorial_lib",
+    srcs = ["factorial.cc"],
+    hdrs = ["factorial.h"],
+    copts = ["-O2", "-std=c++17"],
+    visibility = ["//visibility:public"],
+    linkopts = ["-lgmp", "-lgmpxx"],
+)
+
+cc_binary(
+    name = "factorial_bin",
+    srcs = ["factorial_main.cc"],
+    copts = ["-std=c++17"],
+    deps = [":factorial_lib"],
+    visibility = ["//visibility:public"],
+)
