@@ -22,7 +22,6 @@ sudo mv bazelisk /usr/local/bin/bazel
 
 ### 2. Install GMP
 GMP is the GNU Multiple Precision library used by the C++ code.
-bashsudo apt install libgmp-dev
 ```sh
 sudo apt install libgmp-dev
 ```
