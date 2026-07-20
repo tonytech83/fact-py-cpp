@@ -17,14 +17,19 @@ import time
 sys.set_int_max_str_digits(0)
 
 
-# ── find the C++ binary ───────────────────────────────────────────────────────
+# ── find binary ───────────────────────────────────────────────────────
 
-def _find_binary() -> str:
+def _find_binary(lang: str, binary_name: str) -> str:
     repo_root = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
-    binary = os.path.join(repo_root, "bazel-bin", "cpp", "factorial_bin")
-    if not os.path.isfile(binary):
-        sys.exit("Cannot find factorial_bin.\nRun: bazel run //python:benchmark")
-    return binary
+    candidates = [
+        os.path.join(repo_root, "bazel-bin", lang, binary_name),
+        # rules_go nests the executable in "<name>_/" unless out= is set
+        os.path.join(repo_root, "bazel-bin", lang, binary_name + "_", binary_name),
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    sys.exit(f"Cannot find {lang}/{binary_name}.\nRun: bazel run //python:benchmark")
 
 
 # ── pure Python factorial ─────────────────────────────────────────────────────
@@ -56,6 +61,26 @@ def cpp_factorial(n: int, binary: str) -> tuple[int, float]:
     return info["digits"], info["time_us"] / 1_000_000
 
 
+# ── call Go binary ────────────────────────────────────────────────────────────
+def go_factorial(n: int, binary: str) -> tuple[int, float]:
+    """Call the Go binary, return (digit_count, time_seconds)."""
+    proc = subprocess.run(
+        [binary, str(n)],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        sys.exit(f"Go binary failed:\n{proc.stderr}")
+
+    info = {}
+    for line in proc.stdout.strip().splitlines():
+        key, val = line.split()
+        info[key] = int(val)
+
+    return info["digits"], info["time_us"] / 1_000_000
+
+
+
 # ── formatting ────────────────────────────────────────────────────────────────
 
 def _fmt_time(t: float) -> str:
@@ -68,21 +93,13 @@ def _bar(value: float, max_value: float, width: int = 30) -> str:
     filled = int(round(value / max_value * width)) if max_value > 0 else 0
     return "█" * filled + "░" * (width - filled)
 
-def print_results(n: int, py_time: float, cpp_time: float, digit_count: int) -> None:
-    speedup = py_time / cpp_time if cpp_time > 0 else float("inf")
+def print_results(n: int, py_time: float, cpp_time: float,
+                  go_time: float, digit_count: int) -> None:
+    rows = [("Python", py_time), ("C++", cpp_time), ("Go", go_time)]
+    max_t = max(t for _, t in rows)
 
-    if speedup < 1:
-        msg = f"  Python is {1/speedup:.1f}x faster than C++"
-        note = "  Note: for small n, C++ loses because subprocess launch overhead (~20µs) dominates the actual calculation time."
-    else:
-        msg = f"  C++ is {speedup:.1f}x faster than Python"
-        note = ""
-
-    max_t   = max(py_time, cpp_time)
-
-    py_str  = _fmt_time(py_time)
-    cpp_str = _fmt_time(cpp_time)
-    col     = max(len(py_str), len(cpp_str))  # align column to widest time
+    fmt = {name: _fmt_time(t) for name, t in rows}
+    col = max(max(len(s) for s in fmt.values()), len("Time"))
 
     print()
     print(f"  Factorial benchmark   n = {n:,}")
@@ -90,12 +107,24 @@ def print_results(n: int, py_time: float, cpp_time: float, digit_count: int) -> 
     print()
     print(f"  {'Implementation':<14}  {'Time':>{col}}  Chart")
     print(f"  {'-'*14}  {'-'*col}  {'-'*30}")
-    print(f"  {'Python':<14}  {py_str:>{col}}  {_bar(py_time, max_t)}")
-    print(f"  {'C++':<14}  {cpp_str:>{col}}  {_bar(cpp_time, max_t)}")
+    for name, t in rows:
+        print(f"  {name:<14}  {fmt[name]:>{col}}  {_bar(t, max_t)}")
     print()
-    print(msg)
-    if note:
-        print(note)
+
+    def versus(a: str, a_t: float, b: str, b_t: float) -> None:
+        if a_t <= 0 or b_t <= 0:
+            return
+        if a_t <= b_t:
+            print(f"  {a} is {b_t / a_t:.1f}x faster than {b}")
+        else:
+            print(f"  {b} is {a_t / b_t:.1f}x faster than {a}")
+
+    versus("C++", cpp_time, "Python", py_time)
+    versus("Go",  go_time,  "Python", py_time)
+    versus("C++", cpp_time, "Go",     go_time)
+
+    if py_time < cpp_time or py_time < go_time:
+        print("  Note: at small n the differences are mostly timer noise, not real speed.")
     print()
 
 
@@ -108,9 +137,11 @@ def main() -> None:
     args = parser.parse_args()
     n = args.n
 
-    binary = _find_binary()
+    cpp_binary = _find_binary("cpp", "factorial_bin")
+    go_binary = _find_binary("go", "factorial_bin")
     print(f"[benchmark] n = {n:,}")
-    print(f"[benchmark] C++ binary: {binary}")
+    print(f"[benchmark] C++ binary: {cpp_binary}")
+    print(f"[benchmark] Go binary: {go_binary}")
 
     # ── Python ──
     print(f"[benchmark] Running Python factorial({n:,}) ...")
@@ -121,12 +152,17 @@ def main() -> None:
 
     # ── C++ ──
     print(f"[benchmark] Running C++ factorial({n:,}) ...")
-    cpp_digits, cpp_time = cpp_factorial(n, binary)
+    cpp_digits, cpp_time = cpp_factorial(n, cpp_binary)
 
-    if py_digits != cpp_digits:
-        print(f"  WARNING: digit count mismatch! Python={py_digits} C++={cpp_digits}")
+    # ── Go ──
+    print(f"[benchmark] Running Go factorial({n:,}) ...")
+    go_digits, go_time = go_factorial(n, go_binary)
 
-    print_results(n, py_time, cpp_time, cpp_digits)
+    if not (py_digits == cpp_digits == go_digits):
+        print(f"  WARNING: digit count mismatch! "
+              f"Python={py_digits} C++={cpp_digits} Go={go_digits}")
+
+    print_results(n, py_time, cpp_time, go_time, py_digits)
 
 
 if __name__ == "__main__":
