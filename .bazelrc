@@ -1,0 +1,2 @@
+# .bazelrc
+build --compilation_mode=opt

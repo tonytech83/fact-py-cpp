@@ -1,0 +1,12 @@
+[package]
+name = "factorial"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+num_bigint = "0.4"
+num_traits = "0.2"
+
+[[bin]]
+name = "factorial_bin"
+path = "src/main.rs"

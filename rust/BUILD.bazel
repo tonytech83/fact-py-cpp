@@ -1,0 +1,10 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "factorial_bin",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    rustc_flags = ["-Copt-level=3"],
+    deps = ["@crates//:num-bigint", "@crates//:num-traits"],
+    visibility = ["//visibility:public"],
+)

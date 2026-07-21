@@ -4,6 +4,10 @@ py_binary(
     name = "benchmark",
     srcs = ["benchmark.py"],
     main = "benchmark.py",
-    data = ["//cpp:factorial_bin", "//go:factorial_bin"],
+    data = [
+        "//cpp:factorial_bin",
+         "//go:factorial_bin",
+         "//rust:factorial_bin",
+         ],
     python_version = "PY3",
 )

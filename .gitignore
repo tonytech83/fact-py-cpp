@@ -6,3 +6,4 @@ MODULE.bazel.lock
 __pycache__
 *.pyc
 bazel-fact-py-cpp
+bazel-bazel-factorial
