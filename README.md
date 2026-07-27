@@ -34,32 +34,36 @@ bazel run //python:benchmark -- --n 100000
 bazel run //python:benchmark -- --n 500000
 ```
 ### Expected output
-```plain
-[benchmark] n = 500,000
-[benchmark] C++ binary: /home/tonytech/github/bazel-factorial/bazel-bin/cpp/factorial_bin
-[benchmark] Go binary: /home/tonytech/github/bazel-factorial/bazel-bin/go/factorial_bin
-[benchmark] Rust binary: /home/tonytech/github/bazel-factorial/bazel-bin/rust/factorial_bin
-[benchmark] Running Python factorial(500,000) ...
-[benchmark] Running C++ factorial(500,000) ...
-[benchmark] Running Go factorial(500,000) ...
-[benchmark] Running Rust factorial(500,000) ...
+```sh
+$ bazel run //python:benchmark -- --n 400000
+INFO: Analyzed target //python:benchmark (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //python:benchmark up-to-date:
+  bazel-bin/python/benchmark
+INFO: Elapsed time: 0.365s, Critical Path: 0.00s
+INFO: 1 process: 1 internal.
+INFO: Build completed successfully, 1 total action
+INFO: Running command line: bazel-bin/python/benchmark <args omitted>
+[benchmark] Running Python factorial(400,000) ...
+[benchmark] Running cpp factorial(400,000) ...
+[benchmark] Running go factorial(400,000) ...
+[benchmark] Running rust factorial(400,000) ...
 
-  Factorial benchmark   n = 500,000
-  Result has 2,632,342 digits
+  Factorial benchmark   n = 400,000
+  Result has 2,067,110 digits
 
-  Implementation      Time  Chart
-  --------------  --------  ------------------------------
-  Python          1m 53.8s  ██████████████████████████████
-  C++               29.03s  ████████░░░░░░░░░░░░░░░░░░░░░░
-  Go                56.54s  ███████████████░░░░░░░░░░░░░░░
-  Rust              27.75s  ███████░░░░░░░░░░░░░░░░░░░░░░░
+  Implementation     Time  Chart
+  --------------  -------  ------------------------------
+  Rust             38.20s  ██████░░░░░░░░░░░░░░░░░░░░░░░░
+  C++              43.52s  ███████░░░░░░░░░░░░░░░░░░░░░░░
+  Go               46.76s  ████████░░░░░░░░░░░░░░░░░░░░░░
+  Python          3m 0.8s  ██████████████████████████████
 
-  C++ is 3.9x faster than Python
-  Go is 2.0x faster than Python
-  Rust is 4.1x faster than Python
-  C++ is 1.9x faster than Go
-  Rust is 1.0x faster than C++
-  Rust is 2.0x faster than Go
+  The winner is Rust with 38.198348s time.
+
+  Rust is 1.1x faster than C++
+  Rust is 1.2x faster than Go
+  Rust is 4.7x faster than Python
 ```
 
 > **Note:** the compiled binaries measure only the calculation time internally,
