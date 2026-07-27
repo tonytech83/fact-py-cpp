@@ -8,6 +8,7 @@ py_binary(
         "//cpp:factorial_bin",
          "//go:factorial_bin",
          "//rust:factorial_bin",
+         "//c:factorial_bin",
          ],
     python_version = "PY3",
 )

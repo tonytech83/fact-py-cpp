@@ -20,7 +20,8 @@ sys.set_int_max_str_digits(0)
 LANGS: {str, str} = {
     "cpp": "C++",
     "go": "Go",
-    "rust": "Rust"
+    "rust": "Rust",
+    "c": "C",
 }
 
 # ── find binary ───────────────────────────────────────────────────────
