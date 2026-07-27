@@ -26,6 +26,7 @@ LANGS: {str, str} = {
 # ── find binary ───────────────────────────────────────────────────────
 
 def _find_binary(lang: str) -> str:
+    """Return the path of binary based on language."""
     repo_root = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
     candidates = [
         os.path.join(repo_root, "bazel-bin", lang, "factorial_bin"),
@@ -68,20 +69,30 @@ def run_binary(lang: str, n: int, binary: str) -> tuple[int, float]:
 # ── formatting ────────────────────────────────────────────────────────────────
 
 def _fmt_time(t: float) -> str:
+    """Format the time to human readable format."""
     if t >= 60:   return f"{int(t)//60}m {t%60:.1f}s"
     if t >= 1:    return f"{t:.2f}s"
     if t >= 0.001: return f"{t*1000:.1f}ms"
     return f"{t*1e6:.0f}µs"
 
 def _bar(value: float, max_value: float, width: int = 30) -> str:
+    """Calculete how many should be filled the bar."""
     filled = int(round(value / max_value * width)) if max_value > 0 else 0
     return "█" * filled + "░" * (width - filled)
 
-def print_results(n: int,digit_count: int, langs_time) -> None:
-    results_sorted_by_time = sorted(langs_time, key=lambda time: time[1])
-    max_t = max(t for _, t in results_sorted_by_time)
+def _winner_versus(winner: str, winner_time: float, other_lang: str, other_time: float) -> None:
+    """Print on console the ratio between winner and other language."""
+    if winner_time <= 0 or other_time <= 0:
+        return
+    else:
+        print(f"  {winner} is {other_time / winner_time:.1f}x faster than {other_lang}")
 
-    fmt = {name: _fmt_time(t) for name, t in results_sorted_by_time}
+def print_results(n: int,digit_count: int, langs_time) -> None:
+    """Print the results for factorial based on all languages."""
+    sorted_langs_time = sorted(langs_time, key=lambda time: time[1])
+    max_t = max(t for _, t in sorted_langs_time)
+
+    fmt = {name: _fmt_time(t) for name, t in sorted_langs_time}
     col = max(max(len(s) for s in fmt.values()), len("Time"))
 
     print()
@@ -90,27 +101,20 @@ def print_results(n: int,digit_count: int, langs_time) -> None:
     print()
     print(f"  {'Implementation':<14}  {'Time':>{col}}  Chart")
     print(f"  {'-'*14}  {'-'*col}  {'-'*30}")
-    for name, t in results_sorted_by_time:
+    for name, t in sorted_langs_time:
         print(f"  {name:<14}  {fmt[name]:>{col}}  {_bar(t, max_t)}")
     print()
 
-    def versus(a: str, a_t: float, b: str, b_t: float) -> None:
-        if a_t <= 0 or b_t <= 0:
-            return
-        if a_t <= b_t:
-            print(f"  {a} is {b_t / a_t:.1f}x faster than {b}")
-        else:
-            print(f"  {b} is {a_t / b_t:.1f}x faster than {a}")
 
     # ── The winner is ... ──
-    winner_lang = results_sorted_by_time[0][0]
-    winner_time = results_sorted_by_time[0][1]
+    winner_lang = sorted_langs_time[0][0]
+    winner_time = sorted_langs_time[0][1]
     print(f"  The winner is {winner_lang} with {_fmt_time(winner_time)} time.")
     print()
 
     # ── Print winner vs. each other lang ──
-    for i in range(1, len(results_sorted_by_time)):
-        versus(winner_lang,  winner_time,  results_sorted_by_time[i][0], results_sorted_by_time[i][1])
+    for i in range(1, len(sorted_langs_time)):
+        _winner_versus(winner_lang,  winner_time,  sorted_langs_time[i][0], sorted_langs_time[i][1])
     print()
 
     if winner_lang == "Python":
